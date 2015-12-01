@@ -3,19 +3,19 @@ const React = require('react-native');
 const {
   StyleSheet,
 } = React;
+const { Dimensions, Animated, } = React;
+const deviceScreen = Dimensions.get('window');
 
 module.exports = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   menu: {
     flex: 1,
     backgroundColor: 'transparent',
-    position: 'absolute',
-    top: 0,
-    left: 0,
+    width: deviceScreen.width * 2 / 3,
   },
   frontView: {
     flex: 1,

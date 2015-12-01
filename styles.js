@@ -2,8 +2,9 @@ const React = require('react-native');
 
 const {
   StyleSheet,
+  Dimensions,
+  Animated,
 } = React;
-const { Dimensions, Animated, } = React;
 const deviceScreen = Dimensions.get('window');
 
 module.exports = StyleSheet.create({

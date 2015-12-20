@@ -12,6 +12,7 @@ module.exports = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'flex-start',
+    backgroundColor: '#222',
   },
   menu: {
     flex: 1,

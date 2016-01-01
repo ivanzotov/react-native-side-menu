@@ -30,11 +30,6 @@ function shouldOpenMenu(dx: Number) {
 class SideMenu extends Component {
   constructor(props) {
     super(props);
-    /**
-     * Current state of the menu, whether it is open or not
-     * @type {Boolean}
-     */
-    this.isOpen = false;
 
     /**
      * Default left offset for content view
@@ -42,16 +37,14 @@ class SideMenu extends Component {
      * @type {Number}
      */
     this.prevLeft = 0;
+    this.isOpen = props.isOpen;
 
     this.state = {
-      shouldRenderMenu: false,
-      left: new Animated.Value(0),
-    };
-  }
-
-  getChildContext() {
-    return {
-      menuActions: this.getMenuActions(),
+      width: deviceScreen.width,
+      height: deviceScreen.height,
+      left: new Animated.Value(
+        props.isOpen ? props.openMenuOffset : props.hiddenMenuOffset
+      ),
     };
   }
 
@@ -68,13 +61,9 @@ class SideMenu extends Component {
     });
   }
 
-  componentDidMount() {
-    this.setState({
-      shouldRenderMenu: true,
-    });
-
-    if (this.props.defaultOpen) {
-      this.openMenu();
+  componentWillReceiveProps(props) {
+    if (this.isOpen !== props.isOpen) {
+      this.openMenu(props.isOpen);
     }
   }
 
@@ -108,9 +97,10 @@ class SideMenu extends Component {
       }
 
       const withinEdgeHitWidth = this.props.menuPosition === 'right' ?
-          gestureState.moveX > (deviceScreen.width - this.props.edgeHitWidth) :
-          gestureState.moveX < this.props.edgeHitWidth;
-      const swipingToOpen = (this.menuPositionMultiplier() * gestureState.dx) > 0;
+        gestureState.moveX > (deviceScreen.width - this.props.edgeHitWidth) :
+        gestureState.moveX < this.props.edgeHitWidth;
+
+      const swipingToOpen = this.menuPositionMultiplier() * gestureState.dx > 0;
       return withinEdgeHitWidth && touchMoved && swipingToOpen;
     }
 
@@ -136,16 +126,10 @@ class SideMenu extends Component {
    * @return {Void}
    */
   handlePanResponderEnd(e: Object, gestureState: Object) {
-    const currentLeft = this.state.left.__getValue();
+    const offsetLeft = this.menuPositionMultiplier() *
+      (this.state.left.__getValue() + gestureState.dx);
 
-    const shouldOpen = this.menuPositionMultiplier() *
-      (currentLeft + gestureState.dx);
-
-    if (shouldOpenMenu(shouldOpen)) {
-      this.openMenu();
-    } else {
-      this.closeMenu();
-    }
+    this.openMenu(shouldOpenMenu(offsetLeft));
   }
 
   /**
@@ -156,65 +140,27 @@ class SideMenu extends Component {
     return this.props.menuPosition === 'right' ? -1 : 1;
   }
 
-  /**
-   * Open menu
-   * @return {Void}
-   */
-  openMenu() {
-    const openOffset = this.menuPositionMultiplier() *
-      this.props.openMenuOffset;
+  moveLeft(offset) {
+    const newOffset = this.menuPositionMultiplier() * offset;
 
     this.props
-      .animationFunction(this.state.left, openOffset)
+      .animationFunction(this.state.left, newOffset)
       .start();
 
-    this.prevLeft = openOffset;
-
-    if (!this.isOpen) {
-      this.isOpen = true;
-      this.props.onChange(this.isOpen);
-
-      // Force update to make the overlay appear (if touchToClose is set)
-      if (this.props.touchToClose) {
-        this.forceUpdate();
-      }
-    }
-  }
-
-  /**
-   * Close menu
-   * @return {Void}
-   */
-  closeMenu() {
-    const closeOffset = this.menuPositionMultiplier() * this.props.hiddenMenuOffset;
-
-    this.props
-      .animationFunction(this.state.left, closeOffset)
-      .start();
-
-    this.prevLeft = closeOffset;
-
-    if (this.isOpen) {
-      this.isOpen = false;
-      this.props.onChange(this.isOpen);
-
-      // Force update to make the overlay disappear (if touchToClose is set)
-      if (this.props.touchToClose) {
-        this.forceUpdate();
-      }
-    }
+    this.prevLeft = newOffset;
   }
 
   /**
    * Toggle menu
    * @return {Void}
    */
-  toggleMenu() {
-    if (this.isOpen) {
-      this.closeMenu();
-    } else {
-      this.openMenu();
-    }
+  openMenu(isOpen) {
+    const { hiddenMenuOffset, openMenuOffset, } = this.props;
+    this.moveLeft(isOpen ? openMenuOffset : hiddenMenuOffset);
+    this.isOpen = isOpen;
+
+    this.forceUpdate();
+    this.props.onChange(isOpen);
   }
 
   /**
@@ -224,38 +170,28 @@ class SideMenu extends Component {
   getContentView() {
     let overlay = null;
 
-    if (this.isOpen && this.props.touchToClose) {
+    if (this.isOpen) {
       overlay = (
-        <TouchableWithoutFeedback onPress={this.closeMenu.bind(this)}>
+        <TouchableWithoutFeedback onPress={() => this.openMenu(false)}>
           <View style={styles.overlay} />
         </TouchableWithoutFeedback>
       );
     }
 
     const { width, height, } = this.state;
+    const ref = (sideMenu) => this.sideMenu = sideMenu;
+    const style = [
+      styles.frontView,
+      { width, height, },
+      this.props.animationStyle(this.state.left),
+    ];
 
     return (
-      <Animated.View
-        style={[styles.frontView, { width, height, }, this.props.animationStyle(this.state.left), ]}
-        ref={(sideMenu) => this.sideMenu = sideMenu}
-        {...this.responder.panHandlers}>
+      <Animated.View style={style} ref={ref} {...this.responder.panHandlers}>
         {this.props.children}
         {overlay}
       </Animated.View>
     );
-  }
-
-  /**
-   * Get menu actions to expose it to
-   * menu and children components
-   * @return {Object} Public API methods
-   */
-  getMenuActions() {
-    return {
-      close: this.closeMenu.bind(this),
-      toggle: this.toggleMenu.bind(this),
-      open: this.openMenu.bind(this),
-    };
   }
 
   onLayoutChange(e) {
@@ -268,14 +204,7 @@ class SideMenu extends Component {
    * @return {React.Component}
    */
   render() {
-    let menu = null;
-
-    /**
-     * If menu is ready to be rendered
-     */
-    if (this.state.shouldRenderMenu) {
-      menu = <View style={styles.menu}>{this.props.menu}</View>;
-    }
+    const menu = <View style={styles.menu}>{this.props.menu}</View>;
 
     return (
       <View style={styles.container} onLayout={this.onLayoutChange.bind(this)}>
@@ -286,30 +215,24 @@ class SideMenu extends Component {
   }
 }
 
-SideMenu.childContextTypes = {
-  menuActions: React.PropTypes.object.isRequired,
-};
-
 SideMenu.propTypes = {
   edgeHitWidth: React.PropTypes.number,
   toleranceX: React.PropTypes.number,
   toleranceY: React.PropTypes.number,
   menuPosition: React.PropTypes.oneOf(['left', 'right', ]),
   onChange: React.PropTypes.func,
-  touchToClose: React.PropTypes.bool,
   openMenuOffset: React.PropTypes.number,
   hiddenMenuOffset: React.PropTypes.number,
   disableGestures: React.PropTypes.oneOfType([React.PropTypes.func, React.PropTypes.bool, ]),
   animationFunction: React.PropTypes.func,
   onStartShouldSetResponderCapture: React.PropTypes.func,
-  defaultOpen: React.PropTypes.bool,
+  isOpen: React.PropTypes.bool,
 };
 
 SideMenu.defaultProps = {
   toleranceY: 10,
   toleranceX: 10,
   edgeHitWidth: 60,
-  touchToClose: false,
   openMenuOffset: deviceScreen.width * 2 / 3,
   hiddenMenuOffset: 0,
   onStartShouldSetResponderCapture: () => true,
@@ -330,7 +253,7 @@ SideMenu.defaultProps = {
       }
     );
   },
-  defaultOpen: false,
+  isOpen: false,
 };
 
 module.exports = SideMenu;

@@ -1,3 +1,4 @@
+//@noflow
 const styles = require('./styles');
 const React = require('react-native');
 const { Dimensions, Animated, } = React;
@@ -115,7 +116,13 @@ class SideMenu extends Component {
    */
   handlePanResponderMove(e: Object, gestureState: Object) {
     if (this.state.left.__getValue() * this.menuPositionMultiplier() >= 0) {
-      this.state.left.setValue(this.prevLeft + gestureState.dx);
+      let newLeft = this.prevLeft + gestureState.dx;
+
+      if (!this.props.bounceBackOnOverdraw && Math.abs(newLeft) > this.props.openMenuOffset) {
+        newLeft = this.menuPositionMultiplier() * this.props.openMenuOffset;
+      }
+
+      this.state.left.setValue(newLeft);
     }
   }
 
@@ -227,6 +234,7 @@ SideMenu.propTypes = {
   animationFunction: React.PropTypes.func,
   onStartShouldSetResponderCapture: React.PropTypes.func,
   isOpen: React.PropTypes.bool,
+  bounceBackOnOverdraw: React.PropTypes.bool,
 };
 
 SideMenu.defaultProps = {
@@ -254,6 +262,7 @@ SideMenu.defaultProps = {
     );
   },
   isOpen: false,
+  bounceBackOnOverdraw: true,
 };
 
 module.exports = SideMenu;

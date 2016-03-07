@@ -1,6 +1,6 @@
 const React = require('react-native');
-const Dimensions = require('Dimensions');
 const {
+  Dimensions,
   StyleSheet,
   ScrollView,
   View,
@@ -43,9 +43,13 @@ const styles = StyleSheet.create({
 });
 
 module.exports = class Menu extends Component {
+  static propTypes = {
+    onItemSelected: React.PropTypes.func.isRequired,
+  };
+
   render() {
     return (
-      <ScrollView style={styles.menu}>
+      <ScrollView scrollsToTop={false} style={styles.menu}>
         <View style={styles.avatarContainer}>
           <Image
             style={styles.avatar}
@@ -53,8 +57,17 @@ module.exports = class Menu extends Component {
           <Text style={styles.name}>Your name</Text>
         </View>
 
-        <Text style={styles.item}>About</Text>
-        <Text style={styles.item}>Contacts</Text>
+        <Text
+          onPress={() => this.props.onItemSelected('About')}
+          style={styles.item}>
+          About
+        </Text>
+
+        <Text
+          onPress={() => this.props.onItemSelected('Contacts')}
+          style={styles.item}>
+          Contacts
+        </Text>
       </ScrollView>
     );
   }

@@ -1,15 +1,15 @@
 //@noflow
-const styles = require('./styles');
-const React = require('react-native');
-const { Dimensions, Animated, } = React;
+import styles from './styles'
+import React, { Component } from 'react'
 const deviceScreen = Dimensions.get('window');
 
-const {
+import {
   PanResponder,
   View,
   TouchableWithoutFeedback,
-  Component,
-} = React;
+  Dimensions,
+  Animated
+} from 'react-native'
 
 /**
  * Size of the amount you can move content view in the opened menu state and

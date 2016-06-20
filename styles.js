@@ -1,10 +1,10 @@
-const React = require('react-native');
+import React from 'react'
 
-const {
+import {
   StyleSheet,
   Dimensions,
   Animated,
-} = React;
+} from 'react-native'
 const deviceScreen = Dimensions.get('window');
 
 module.exports = StyleSheet.create({

@@ -1,15 +1,15 @@
-const React = require('react-native');
-const SideMenu = require('../../');
-const Menu = require('./Menu');
+import React from 'react'
+import SideMenu from '../../'
+import Menu from './Menu'
 
-const {
+import {
   StyleSheet,
   Text,
   View,
   Image,
   TouchableOpacity,
   Component,
-} = React;
+} from 'react-native'
 
 const styles = StyleSheet.create({
   button: {

@@ -1,13 +1,12 @@
-const React = require('react-native');
-const {
+import React, { Component } from 'react'
+import {
   Dimensions,
   StyleSheet,
   ScrollView,
   View,
   Image,
   Text,
-  Component,
-} = React;
+} from 'react-native'
 
 const window = Dimensions.get('window');
 const uri = 'http://pickaface.net/includes/themes/clean/img/slide2.png';
